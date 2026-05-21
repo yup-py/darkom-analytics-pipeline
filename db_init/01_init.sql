@@ -21,3 +21,23 @@ CREATE TABLE IF NOT EXISTS staging.raw_annonces (
     annee_construction TEXT,
     loaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 3. Create Clean Production Data Structure Base
+CREATE TABLE IF NOT EXISTS clean.annonces (
+    annonce_id VARCHAR(50) PRIMARY KEY,
+    date_publication DATE,
+    ville VARCHAR(100),
+    quartier VARCHAR(150),
+    type_bien VARCHAR(100),
+    transaction VARCHAR(50),
+    prix NUMERIC,
+    surface NUMERIC,
+    nb_chambres INT,
+    nb_salles_bain INT,
+    etage INT,
+    annee_construction INT,
+    price_per_m2 NUMERIC,
+    age_bien INT,
+    categorie_prix VARCHAR(50),
+    categorie_surface VARCHAR(50)
+);
