@@ -1,0 +1,12 @@
+# Environments
+venv/
+.env
+
+# Data & Logs
+data/raw/*.csv
+data/logs/*.log
+
+# IDE files
+.vscode/
+__pycache__/
+*.pyc
