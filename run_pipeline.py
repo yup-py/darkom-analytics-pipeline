@@ -3,7 +3,7 @@ import sys
 import time
 from utils.setup_db import initialize_database_and_tables
 from utils.db_connect import get_db_connection
-from utils.extract_load import load_csv_to_staging
+from utils.extract_load import load_csv_to_staging, export_clean_table_to_csv
 
 print("=========================================================================")
 print("🚀 STARTING PRODUCTION DARKOM PIPELINE ENGINE")
@@ -87,15 +87,23 @@ try:
     start_time = time.time()
     with open(os.path.join('db_init', 'cleaning', '05_feature_engineering.sql'), 'r', encoding='utf-8') as f:
         cursor.execute(f.read())
-    conn.commit()
+    conn.commit()  # Data is locked safely and permanently into clean.annonces
     print(f"✅ Step 5 complete ({time.time() - start_time:.2f}s).\n")
+
+    # -------------------------------------------------------------------------
+    # EXTRA STEP: SAFE LOCAL CSV EXPORT
+    # -------------------------------------------------------------------------
+    print("⏳ [EXTRA STEP] Extracting clean production data to local CSV storage...")
+    processed_csv_path = os.path.join('data', 'processed', 'clean_annonces.csv')
+    export_clean_table_to_csv(conn, processed_csv_path)
+    print("✅ Local CSV dataset generated perfectly.\n")
 
     print("-------------------------------------------------------------------------")
     print("⚙️ EXECUTING POST-PROCESSING PROCEDURES")
     print("-------------------------------------------------------------------------")
 
     # -------------------------------------------------------------------------
-    # STEP 8: WAREHOUSE, VALIDATE, PURGE
+    # STEP 8: WAREHOUSE, VALIDATE, AND PURGE
     # -------------------------------------------------------------------------
     print("⏳ [8/8] Running analytical metrics calculation and data verification...")
     
@@ -104,11 +112,12 @@ try:
         
     with open(os.path.join('db_init', '05_validation.sql'), 'r', encoding='utf-8') as f:
         cursor.execute(f.read())
+    conn.commit()  # Securely lock in the analytics warehouse changes
         
     with open(os.path.join('db_init', '04_purge_staging.sql'), 'r', encoding='utf-8') as f:
         cursor.execute(f.read())
-        
-    conn.commit()
+    conn.commit()  # Finalize staging layer drop
+    
     print("✅ Warehouse calculations and validation checks complete.\n")
 
     print("=========================================================================")
