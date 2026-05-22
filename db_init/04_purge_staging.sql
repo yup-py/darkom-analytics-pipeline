@@ -1,8 +1,8 @@
--- 04_purge_staging.sql
--- Final Step: Clean up all staging tables to free up database resources
+-- 1. Truncate the main ingestion table (Preserves structure/columns for the next run)
+TRUNCATE TABLE staging.raw_annonces RESTART IDENTITY CASCADE;
 
-TRUNCATE staging.raw_annonces CASCADE;
-TRUNCATE staging.clean_step1_standardized CASCADE;
-TRUNCATE staging.clean_step2_outliers CASCADE;
-TRUNCATE staging.clean_step3_imputed CASCADE;
-TRUNCATE staging.clean_step4_typed CASCADE;
+-- 2. Drop intermediate ETL helper tables completely to free up disk space
+DROP TABLE IF EXISTS staging.clean_step1_standardized CASCADE;
+DROP TABLE IF EXISTS staging.clean_step2_outliers CASCADE;
+DROP TABLE IF EXISTS staging.clean_step3_imputed CASCADE;
+DROP TABLE IF EXISTS staging.clean_step4_typed CASCADE;
