@@ -38,3 +38,33 @@ def load_csv_to_staging(conn, csv_path):
                 cursor.executemany(insert_query, batch)
                 
     print("   ✅ Raw staging data ingestion successfully committed.")
+
+
+def export_clean_table_to_csv(conn, output_csv_path):
+    """Fetches production data safely from clean.annonces and saves it as a local CSV."""
+    output_dir = os.path.dirname(output_csv_path)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+        
+    print(f"   ⏩ Exporting clean production records to: {output_csv_path}")
+    
+    # Using a clean, isolated cursor context to prevent any transaction conflicts
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            SELECT 
+                annonce_id, date_publication, ville, quartier, type_bien, 
+                transaction, prix, surface, nb_chambres, nb_salles_bain, 
+                etage, annee_construction, price_per_m2, age_bien, 
+                categorie_prix, categorie_surface 
+            FROM clean.annonces;
+        """)
+        
+        rows = cursor.fetchall()
+        headers = [desc[0] for desc in cursor.description]
+        
+        with open(output_csv_path, mode='w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
+            writer.writerows(rows)
+            
+    print(f"   ✅ Local CSV save complete! Total exported rows: {len(rows)}")
