@@ -1,0 +1,60 @@
+// 1. Core Volume Metrics
+
+
+/ Total Active Listings
+Total Active Listings = COUNTROWS('fact_annonces')
+
+/ Property Type Share %
+Property Type Share % = 
+DIVIDE(
+    [Total Active Listings],
+    CALCULATE([Total Active Listings], ALL('dim_caracteristiques'[type_bien])),
+    0
+)
+
+
+// 2. Financial & Valuation Metrics
+
+
+/ Average Listing Price
+Average Listing Price = AVERAGE('fact_annonces'[prix])
+
+/ Average Price per m²
+Average Price per m² = AVERAGE('fact_annonces'[price_per_m2])
+
+/ Avg Price per City
+Avg Price per City = 
+CALCULATE(
+    [Average Listing Price],
+    ALLEXCEPT('dim_localisation', 'dim_localisation'[ville])
+)
+
+
+// 3. Structural Metrics
+
+
+/ Average Surface Area (m²)
+Average Surface Area (m²) = AVERAGE('fact_annonces'[surface])
+
+
+// 4. Time Intelligence & Trends
+
+
+/ Listings Previous Year
+Listings Previous Year = 
+CALCULATE(
+    [Total Active Listings],
+    DATEADD('dim_temps'[full_date], -1, YEAR)
+)
+
+/ YoY Ad Growth Rate
+YoY Ad Growth Rate = 
+VAR LatestYear = MAX('dim_temps'[annee])
+VAR CurrentYearAds = CALCULATE([Total Active Listings], 'dim_temps'[annee] = LatestYear)
+VAR PriorYearAds = CALCULATE([Total Active Listings], 'dim_temps'[annee] = LatestYear - 1)
+RETURN
+DIVIDE(
+    CurrentYearAds - PriorYearAds, 
+    PriorYearAds, 
+    0
+)
