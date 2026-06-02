@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS staging.clean_step1_standardized CASCADE;
 CREATE TABLE staging.clean_step1_standardized AS 
 SELECT 
     TRIM(annonce_id) AS annonce_id,
-    TRIM(titre) AS titre, -- ◄ ADDED THIS LINE TO CAPTURE THE TITLE
+    TRIM(titre) AS titre,
     
     -- Extract only the YYYY-MM-DD portion from raw timestamps
     LEFT(TRIM(date_publication), 10) AS date_publication_raw,
@@ -32,5 +32,6 @@ SELECT
     TRIM(annee_construction) AS annee_construction_raw
 
 FROM staging.raw_annonces
+
 -- Core System Filter: Exclude rows missing unique identifiers
 WHERE annonce_id IS NOT NULL AND TRIM(annonce_id) != '';

@@ -1,9 +1,8 @@
--- 05_feature_engineering.sql
--- Step 5: Perform mathematical feature engineering and load to production cleanly
+-- Perform mathematical feature engineering and load to production cleanly
 
 BEGIN;
 
--- 1. Clear out any existing production data to avoid duplicate key violations
+-- 1. Clear out any existing production data 
 TRUNCATE TABLE clean.annonces CASCADE;
 
 -- 2. Insert into production using DISTINCT ON to guarantee Primary Key uniqueness
@@ -39,7 +38,7 @@ SELECT DISTINCT ON (annonce_id)
     etage,
     annee_construction,
     
-    -- Feature 1: Price per Square Meter (Straightforward monthly/standard calculation)s
+    -- Feature 1: Price per Square Meter
     CASE 
         WHEN surface > 0 THEN ROUND(prix / surface, 2) 
         ELSE 0                                      
@@ -51,7 +50,7 @@ SELECT DISTINCT ON (annonce_id)
         ELSE NULL 
     END AS age_bien,
     
-    -- Feature 3: Market Pricing Segments (Includes requested: Économique, Moyen, Haut standing, Luxe)
+    -- Feature 3: Market Pricing Segments
     CASE 
         WHEN transaction = 'Location' THEN
             CASE 
@@ -60,7 +59,7 @@ SELECT DISTINCT ON (annonce_id)
                 WHEN prix BETWEEN 8000 AND 15000 THEN 'Haut standing'
                 ELSE 'Luxe'
             END
-        ELSE -- Logic for 'Vente' (Sales)
+        ELSE
             CASE 
                 WHEN prix < 600000 THEN 'Économique'
                 WHEN prix BETWEEN 600000 AND 1999999 THEN 'Moyen'
@@ -69,7 +68,7 @@ SELECT DISTINCT ON (annonce_id)
             END
     END AS categorie_prix,
     
-    -- Feature 4: Surface Area Binning Segments (Strictly 3-Tier System per Brief)
+    -- Feature 4: Surface Area Binning Segments
     CASE 
         WHEN surface < 80 THEN 'Petit (< 80 m²)'
         WHEN surface BETWEEN 80 AND 150 THEN 'Moyen (80-150 m²)'

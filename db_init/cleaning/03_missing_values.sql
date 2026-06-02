@@ -1,11 +1,10 @@
 -- 03_missing_values.sql
--- Step 3: Advanced Imputation & Structural Metric Initialization
 
 DROP TABLE IF EXISTS staging.clean_step3_imputed CASCADE;
 
 CREATE TABLE staging.clean_step3_imputed AS 
 WITH base_deduplicated AS (
-    -- 1. Strict Deduplication and Date sanitization
+    -- Deduplication and Date sanitization
     SELECT DISTINCT ON (annonce_id) 
         *, 
         ctid AS original_order,
@@ -13,7 +12,7 @@ WITH base_deduplicated AS (
     FROM staging.clean_step2_outliers
 ),
 extracted_type_bien AS (
-    -- 2. Extract missing property types dynamically from the listing title (titre)
+    -- Extract missing property types dynamically from the listing title
     SELECT b.*,
         CASE 
             WHEN b.type_bien IS NOT NULL AND b.type_bien != '' THEN INITCAP(TRIM(b.type_bien))
@@ -59,7 +58,7 @@ neighborhood_counts AS (
     GROUP BY ville, quartier
 ),
 neighborhood_modes AS (
-    -- ✅ FIXED: Robust calculation of Mode using window partitions
+    -- Robust calculation of Mode using window partitions
     SELECT 
         ville,
         quartier AS mode_quartier
@@ -71,7 +70,7 @@ neighborhood_modes AS (
     WHERE rn = 1
 ),
 structural_medians AS (
-    -- 4. Calculate structural medians grouped by Category and Surface Area buckets
+    -- Calculate structural medians grouped by Category and Surface Area buckets
     SELECT 
         clean_type_bien,
         WIDTH_BUCKET(CAST(surface_raw AS NUMERIC), 0, 2000, 40) as surf_bucket,
@@ -82,7 +81,7 @@ structural_medians AS (
     GROUP BY clean_type_bien, WIDTH_BUCKET(CAST(surface_raw AS NUMERIC), 0, 2000, 40)
 ),
 year_medians AS (
-    -- 5. Calculate local construction year medians based on Quartier within Ville
+    -- Calculate local construction year medians based on Quartier within Ville
     SELECT 
         ville,
         quartier,
@@ -97,10 +96,12 @@ SELECT
     f.ville,
     
     -- Impute Neighborhood based on the City's Mode, fallback to Centre Ville if the whole city is empty
+    
     COALESCE(NULLIF(f.quartier, 'Non Spécifié'), nm.mode_quartier, 'Centre Ville') AS quartier,
     f.clean_type_bien AS type_bien,
     
     -- Custom Transaction Rule
+
     CASE 
         WHEN f.transaction IS NOT NULL THEN f.transaction
         WHEN CAST(f.prix_raw AS NUMERIC) < 50000 THEN 'Location'
@@ -111,6 +112,7 @@ SELECT
     f.surface_raw,
     
     -- Impute Rooms and Baths
+
     CASE 
         WHEN f.clean_type_bien = 'Terrain' THEN NULL
         ELSE COALESCE(f.nb_chambres, CEIL(sm.median_rooms)::INT, 2)
@@ -122,12 +124,14 @@ SELECT
     END AS nb_salles_bain,
     
     -- Impute Floor
+
     CASE 
         WHEN f.clean_type_bien IN ('Terrain', 'Villa') THEN 0
         ELSE COALESCE(f.etage, CEIL(sm.median_etage)::INT, 1)
     END AS etage,
     
     -- Impute Construction Year
+    
     CASE 
         WHEN f.clean_type_bien = 'Terrain' THEN NULL
         ELSE COALESCE(f.annee_construction, CEIL(ym.median_year)::INT, 2015)

@@ -1,5 +1,4 @@
--- 04_type_conversion.sql
--- Step 4: Convert staging text data into clean operational data types safely
+-- Convert staging text data into clean operational data types safely
 
 DROP TABLE IF EXISTS staging.clean_step4_typed CASCADE;
 
@@ -7,7 +6,6 @@ CREATE TABLE staging.clean_step4_typed AS
 SELECT 
     annonce_id,
     
-    -- FIXED: Pass through directly since Step 3 already output a clean, imputed DATE type
     date_publication_raw AS date_publication,
     
     ville,
